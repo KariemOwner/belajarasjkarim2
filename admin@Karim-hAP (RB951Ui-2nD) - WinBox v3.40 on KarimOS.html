@@ -1,0 +1,2155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>admin@Karim-hAP (RB951Ui-2nD) - WinBox v3.40 on KarimOS</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/lucide@0.395.0/dist/umd/lucide.min.js"></script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100dvh;
+      overflow: hidden; overscroll-behavior: none;
+      font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+      font-size: 11px; background: #2b2b2b; color: #111; user-select: none;
+    }
+    .mono { font-family: Consolas, "Lucida Console", "Courier New", monospace; }
+    #three-container, #three-container canvas { touch-action: none; overscroll-behavior: none; outline: none; }
+
+    .win32-bar { background: #d4d0c8; border-bottom: 1px solid #808080; color: #111; }
+    .win32-btn {
+      background: #ece9d8; border: 1px solid #808080;
+      box-shadow: inset 1px 1px 0 #fff; color: #111;
+      padding: 2px 7px; font-size: 11px; line-height: 1.2; cursor: pointer;
+    }
+    .win32-btn:hover { background: #e2decb; }
+    .win32-btn:active, .win32-btn.active {
+      background: #c6c3b6; box-shadow: inset 1px 1px 1px #666;
+    }
+    .win32-input {
+      background: #fff; border: 1px solid #7f9db9; color: #000;
+      padding: 2px 4px; font-size: 11px; height: 21px; outline: none;
+    }
+    .win32-input:focus { border-color: #003c74; }
+
+    .wb-sidebar {
+      background: #e4e4e4; border-right: 1px solid #808080; color: #111;
+    }
+    .wb-nav-item {
+      width: 100%; display: flex; align-items: center; gap: 6px;
+      padding: 4px 8px; font-size: 11px; color: #111;
+      border-bottom: 1px solid #d0d0d0; text-align: left; background: #e4e4e4;
+    }
+    .wb-nav-item:hover { background: #316ac5; color: #fff; }
+
+    .wb-desktop { background: #3a424d; position: relative; overflow: hidden; }
+
+    .wb-window {
+      position: absolute; background: #f0f0f0;
+      border: 1px solid #404040; box-shadow: 2px 2px 6px rgba(0,0,0,0.45);
+      display: flex; flex-direction: column; overflow: hidden; color: #111;
+    }
+    .wb-window.wb-active { border-color: #0a246a; }
+    .wb-titlebar {
+      background: #808080; color: #e0e0e0;
+      padding: 3px 6px; cursor: grab; touch-action: none;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; font-weight: 700; border-bottom: 1px solid #404040; flex-shrink: 0;
+    }
+    .wb-window.wb-active .wb-titlebar {
+      background: #0a246a; color: #ffffff;
+    }
+    .wb-ctrl-btn {
+      width: 16px; height: 15px; background: #d4d0c8; color: #000;
+      border: 1px solid #404040; box-shadow: inset 1px 1px 0 #fff;
+      font-size: 10px; line-height: 12px; text-align: center; font-weight: 700;
+    }
+    .wb-ctrl-btn:hover { background: #e8e4dc; }
+
+    @media (max-width: 767px) {
+      .wb-window.wb-mobile-maximized {
+        position: absolute !important;
+        top: 2px !important; left: 2px !important; right: 2px !important; bottom: 2px !important;
+        width: calc(100% - 4px) !important; height: calc(100% - 4px) !important;
+      }
+    }
+
+    .wb-table-scroll {
+      flex: 1; overflow-x: auto; overflow-y: auto;
+      -webkit-overflow-scrolling: touch; background: #ffffff; min-height: 0;
+    }
+    .wb-table {
+      width: 100%; min-width: 370px; border-collapse: collapse;
+      font-size: 11px; font-family: Tahoma, "Segoe UI", sans-serif; color: #111;
+    }
+    .wb-table th {
+      background: #ece9d8; color: #111; text-align: left;
+      padding: 2px 6px; border-bottom: 1px solid #808080; border-right: 1px solid #ACA899;
+      font-weight: 400; position: sticky; top: 0; z-index: 2; white-space: nowrap;
+    }
+    .wb-table td {
+      padding: 2px 6px; border-bottom: 1px solid #e4e4e4; border-right: 1px solid #f0f0f0;
+      color: #000; white-space: nowrap;
+    }
+    .wb-table tr:nth-child(even) td { background: #f9f9f9; }
+    .wb-table tr:hover td { background: #d6e4f8; }
+    .wb-flag {
+      display: inline-block; min-width: 20px; font-family: Consolas, monospace;
+      font-weight: 700; font-size: 11px; color: #000;
+    }
+    .wb-flag-dim { color: #888; font-style: italic; }
+
+    .node-label-3d {
+      position: absolute; pointer-events: none; transform: translate(-50%, -100%);
+      background: #1c2026; border: 1px solid #6b7280; padding: 1px 5px;
+      font-size: 10px; font-family: Consolas, monospace; color: #f3f4f6;
+      white-space: nowrap; z-index: 5;
+    }
+    .terminal-output { user-select: text; -webkit-overflow-scrolling: touch; }
+  </style>
+</head>
+<body class="flex flex-col h-[100dvh] w-screen overflow-hidden">
+
+  <header class="h-8 win32-bar px-2 flex items-center justify-between shrink-0 z-30">
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="w-2.5 h-2.5 inline-block bg-green-600 border border-black" id="top-pwr-dot"></span>
+      <a href="https://mikrotik.com/product/RB951Ui-2nD" target="_blank" rel="noopener noreferrer" class="font-bold text-[11px] text-black hover:underline truncate">
+        MikroTik RB951Ui-2nD (hAP)
+      </a>
+      <div class="hidden xl:flex items-center gap-2 text-[11px] mono text-neutral-800 border-l border-neutral-500 pl-2">
+        <span>CPU: QCA9531 650MHz (<span id="telemetry-cpu">3%</span>)</span>
+        <span>|</span>
+        <span>Mem: <span id="telemetry-ram">41.2 / 64.0 MiB</span></span>
+        <span>|</span>
+        <span>Arch: MIPSBE (16MiB Flash)</span>
+        <span>|</span>
+        <span>Uptime: <span id="telemetry-uptime">00:00:12</span></span>
+      </div>
+    </div>
+
+    <div class="hidden md:flex items-center gap-1">
+      <button id="btn-layout-split" onclick="setWorkspaceLayout('split')" class="win32-btn active">Split 3D + WinBox</button>
+      <button id="btn-layout-3d" onclick="setWorkspaceLayout('3d')" class="win32-btn">3D Hardware Full</button>
+      <button id="btn-layout-winbox" onclick="setWorkspaceLayout('winbox')" class="win32-btn">WinBox + CLI Full</button>
+    </div>
+
+    <div class="flex items-center gap-1">
+      <button id="btn-audio-toggle" onclick="toggleAudioMute()" class="win32-btn">
+        <span id="icon-audio"></span><span id="label-audio">SFX: ON</span>
+      </button>
+      <button id="btn-quick-reset" onclick="resetLabState()" class="win32-btn">Quick Reset</button>
+      <span class="px-2 py-0.5 bg-[#0a246a] text-white font-bold text-[11px] whitespace-nowrap">
+        Special Build by Karim
+      </span>
+    </div>
+  </header>
+
+  <main id="main-workspace" class="flex-1 flex flex-col md:flex-row min-h-0 relative overflow-hidden">
+
+    <section id="pane-3d" class="relative w-full md:w-[45%] h-full bg-[#16191e] md:border-r border-neutral-600 flex flex-col select-none overflow-hidden">
+      <div class="absolute top-2 left-2 right-2 flex items-start justify-between gap-2 pointer-events-none z-10">
+        <div class="bg-[#d4d0c8] border border-neutral-700 p-1.5 pointer-events-auto text-[#111] max-w-[235px]">
+          <div class="font-bold text-[11px]">RB951Ui-2nD Physical View</div>
+          <div class="flex items-center flex-wrap gap-1 mt-1">
+            <button onclick="setCameraPreset('front')" class="win32-btn">Front Ports</button>
+            <button onclick="setCameraPreset('top')" class="win32-btn">Top Label</button>
+            <button onclick="setCameraPreset('iso')" class="win32-btn">Overview 3D</button>
+          </div>
+        </div>
+
+        <div class="bg-[#d4d0c8] border border-neutral-700 p-1.5 pointer-events-auto text-[10px] mono text-[#111]">
+          <div class="font-bold border-b border-neutral-500 pb-0.5 mb-1">LED INDICATORS</div>
+          <div class="flex items-center gap-1.5">
+            <span id="hud-led-pwr" class="w-2 h-2 inline-block bg-green-600 border border-black"></span>
+            <span>PWR</span>
+            <span id="hud-led-usr" class="w-2 h-2 inline-block bg-green-600 border border-black ml-1"></span>
+            <span>ACT</span>
+          </div>
+          <div class="grid grid-cols-5 gap-1 mt-1 pt-1 border-t border-neutral-500 text-center">
+            <div><div id="hud-led-eth1" class="w-2 h-2 mx-auto bg-green-600 border border-black"></div><span>1</span></div>
+            <div><div id="hud-led-eth2" class="w-2 h-2 mx-auto bg-green-600 border border-black"></div><span>2</span></div>
+            <div><div id="hud-led-eth3" class="w-2 h-2 mx-auto bg-green-600 border border-black"></div><span>3</span></div>
+            <div><div id="hud-led-eth4" class="w-2 h-2 mx-auto bg-neutral-600 border border-black"></div><span>4</span></div>
+            <div><div id="hud-led-eth5" class="w-2 h-2 mx-auto bg-neutral-600 border border-black"></div><span>5</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="three-container" class="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing">
+        <div id="label-router" class="node-label-3d">Karim-hAP (RB951Ui-2nD)</div>
+        <div id="label-isp" class="node-label-3d">ISP Gateway (203.0.113.1/24 | DNS 8.8.8.8)</div>
+        <div id="label-pc1" class="node-label-3d">PC-1 (192.168.88.10/24 GW 192.168.88.1)</div>
+        <div id="label-pc2" class="node-label-3d">PC-2 (192.168.10.20/24 GW 192.168.10.1)</div>
+      </div>
+
+      <div id="quick-port-drawer" class="win32-bar border-t border-neutral-600 px-2 py-1.5 z-10 shrink-0">
+        <div class="flex items-center justify-between mb-1">
+          <button id="btn-toggle-patch-drawer" onclick="toggleQuickPortDrawer()" class="win32-btn font-bold">
+            <span>Quick Port Selector (Ether 1–5)</span><span id="icon-drawer-chevron"></span>
+          </button>
+          <span id="patch-status-hint" class="text-[11px] mono text-black font-bold">3/5 Linked</span>
+        </div>
+        <div id="patch-panel-body" class="overflow-x-auto">
+          <div class="grid grid-cols-5 gap-1 min-w-[430px] sm:min-w-0" id="patch-panel-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pane-winbox" class="w-full md:w-[55%] h-full flex flex-col bg-[#3a424d] overflow-hidden relative">
+      <div class="h-7 bg-[#0a246a] text-white px-2 flex items-center justify-between shrink-0 border-b border-black">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="px-1 bg-white text-[#0a246a] font-bold text-[10px]">W</span>
+          <span class="font-bold text-[11px] truncate">admin@Karim-hAP (RB951Ui-2nD) - WinBox v3.40 on KarimOS</span>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <button onclick="arrangeWinboxWindows()" class="win32-btn">Tile Windows</button>
+        </div>
+      </div>
+
+      <div id="mobile-winbox-subnav" class="flex md:hidden items-center gap-1 px-1.5 py-1 bg-[#d4d0c8] border-b border-neutral-600 overflow-x-auto shrink-0">
+        <button onclick="openMobileWinboxModal('interfaces')" data-mob-win="interfaces" class="mob-win-pill win32-btn active whitespace-nowrap">Interfaces</button>
+        <button onclick="openMobileWinboxModal('addresses')" data-mob-win="addresses" class="mob-win-pill win32-btn whitespace-nowrap">IP Addresses</button>
+        <button onclick="openMobileWinboxModal('routes')" data-mob-win="routes" class="mob-win-pill win32-btn whitespace-nowrap">Routes</button>
+        <button onclick="openMobileWinboxModal('ping')" data-mob-win="ping" class="mob-win-pill win32-btn whitespace-nowrap">Ping Tool</button>
+        <button onclick="openMobileWinboxModal('log')" data-mob-win="log" class="mob-win-pill win32-btn whitespace-nowrap">System Log</button>
+        <button onclick="triggerRouterReboot()" class="win32-btn whitespace-nowrap">Reboot</button>
+      </div>
+
+      <div class="flex-1 flex min-h-0 relative overflow-hidden">
+        <aside class="hidden md:flex w-36 wb-sidebar flex-col justify-between shrink-0 z-20 select-none">
+          <div>
+            <button id="nav-win-interfaces" onclick="toggleWinboxWindow('interfaces')" class="wb-nav-item">Interfaces</button>
+            <button id="nav-win-addresses" onclick="toggleWinboxWindow('addresses')" class="wb-nav-item">IP ▸ Addresses</button>
+            <button id="nav-win-routes" onclick="toggleWinboxWindow('routes')" class="wb-nav-item">IP ▸ Routes</button>
+            <button id="nav-win-ping" onclick="toggleWinboxWindow('ping')" class="wb-nav-item">Tools ▸ Ping</button>
+            <button id="nav-win-log" onclick="toggleWinboxWindow('log')" class="wb-nav-item">Log</button>
+            <button id="nav-win-terminal" onclick="toggleWinboxWindow('terminal')" class="wb-nav-item font-bold">New Terminal</button>
+            <button onclick="triggerRouterReboot()" class="wb-nav-item">System ▸ Reboot</button>
+          </div>
+
+          <div class="p-1.5 border-t border-neutral-400 bg-[#dcdcdc] text-[10px] mono text-black space-y-1">
+            <div class="font-bold border-b border-neutral-400 pb-0.5">NODE TOPOLOGY</div>
+            <div>ISP: 203.0.113.1/24</div>
+            <div>DNS: 8.8.8.8</div>
+            <div>PC1: 192.168.88.10/24</div>
+            <div>GW1: 192.168.88.1</div>
+            <div>PC2: 192.168.10.20/24</div>
+            <div>GW2: 192.168.10.1</div>
+          </div>
+        </aside>
+
+        <div id="winbox-desktop" class="flex-1 wb-desktop">
+
+          <div id="win-interfaces" class="wb-window wb-active" style="top: 6px; left: 6px; width: 450px; height: 210px; z-index: 12;" onpointerdown="focusWinboxWindow('interfaces')">
+            <div class="wb-titlebar" data-drag-window="interfaces">
+              <span>Interface List</span>
+              <div class="flex items-center gap-0.5">
+                <button onclick="minimizeWinboxWindow('interfaces')" class="wb-ctrl-btn" title="Minimize">_</button>
+                <button onclick="closeWinboxWindow('interfaces')" class="wb-ctrl-btn" title="Close">✕</button>
+              </div>
+            </div>
+            <div class="wb-table-scroll">
+              <table class="wb-table">
+                <thead>
+                  <tr>
+                    <th style="width:28px;"></th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>L2 Link Partner</th>
+                    <th>Tx Packet</th>
+                    <th>Rx Packet</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-interfaces"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="win-addresses" class="wb-window" style="top: 6px; left: 464px; width: 430px; height: 210px; z-index: 11;" onpointerdown="focusWinboxWindow('addresses')">
+            <div class="wb-titlebar" data-drag-window="addresses">
+              <span>Address List</span>
+              <div class="flex items-center gap-0.5">
+                <button onclick="minimizeWinboxWindow('addresses')" class="wb-ctrl-btn" title="Minimize">_</button>
+                <button onclick="closeWinboxWindow('addresses')" class="wb-ctrl-btn" title="Close">✕</button>
+              </div>
+            </div>
+            <div class="p-1 bg-[#ece9d8] border-b border-neutral-400 flex flex-wrap items-center gap-1 shrink-0">
+              <input id="input-ip-addr" type="text" value="192.168.10.1/24" placeholder="192.168.10.1/24" class="win32-input mono w-32" />
+              <select id="select-ip-iface" class="win32-input mono">
+                <option value="ether1">ether1</option>
+                <option value="ether2">ether2</option>
+                <option value="ether3" selected>ether3</option>
+                <option value="ether4">ether4</option>
+                <option value="ether5">ether5</option>
+              </select>
+              <button onclick="handleGuiAddAddress()" class="win32-btn">+ Add Address</button>
+            </div>
+            <div class="wb-table-scroll">
+              <table class="wb-table">
+                <thead>
+                  <tr>
+                    <th style="width:24px;"></th>
+                    <th>Address</th>
+                    <th>Network</th>
+                    <th>Interface</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-addresses"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="win-routes" class="wb-window" style="top: 222px; left: 6px; width: 450px; height: 205px; z-index: 10;" onpointerdown="focusWinboxWindow('routes')">
+            <div class="wb-titlebar" data-drag-window="routes">
+              <span>Route List</span>
+              <div class="flex items-center gap-0.5">
+                <button onclick="minimizeWinboxWindow('routes')" class="wb-ctrl-btn" title="Minimize">_</button>
+                <button onclick="closeWinboxWindow('routes')" class="wb-ctrl-btn" title="Close">✕</button>
+              </div>
+            </div>
+            <div class="p-1 bg-[#ece9d8] border-b border-neutral-400 flex flex-wrap items-center gap-1 shrink-0">
+              <input id="input-route-dst" type="text" value="0.0.0.0/0" placeholder="0.0.0.0/0" class="win32-input mono w-24" />
+              <input id="input-route-gw" type="text" value="203.0.113.1" placeholder="203.0.113.1" class="win32-input mono w-28" />
+              <button onclick="handleGuiAddRoute()" class="win32-btn">+ Add Route</button>
+            </div>
+            <div class="wb-table-scroll">
+              <table class="wb-table">
+                <thead>
+                  <tr>
+                    <th style="width:32px;"></th>
+                    <th>Dst. Address</th>
+                    <th>Gateway</th>
+                    <th>Gateway Status</th>
+                    <th>Distance</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-routes"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="win-ping" class="wb-window" style="top: 222px; left: 464px; width: 430px; height: 205px; z-index: 9;" onpointerdown="focusWinboxWindow('ping')">
+            <div class="wb-titlebar" data-drag-window="ping">
+              <span>Ping</span>
+              <div class="flex items-center gap-0.5">
+                <button onclick="minimizeWinboxWindow('ping')" class="wb-ctrl-btn" title="Minimize">_</button>
+                <button onclick="closeWinboxWindow('ping')" class="wb-ctrl-btn" title="Close">✕</button>
+              </div>
+            </div>
+            <div class="p-1 bg-[#ece9d8] border-b border-neutral-400 space-y-1 shrink-0">
+              <div class="flex flex-wrap items-center gap-1">
+                <select id="select-ping-src" class="win32-input mono">
+                  <option value="router">Src: Router</option>
+                  <option value="PC-1">Src: PC-1 (192.168.88.10)</option>
+                  <option value="PC-2">Src: PC-2 (192.168.10.20)</option>
+                </select>
+                <input id="input-ping-target" type="text" value="192.168.88.10" class="win32-input mono w-28" />
+                <button id="btn-ping-start" onclick="startGuiPing()" class="win32-btn">Start</button>
+                <button id="btn-ping-stop" onclick="stopActivePing()" class="win32-btn">Stop</button>
+              </div>
+              <div class="flex items-center flex-wrap gap-1 text-[10px]">
+                <span>Preset:</span>
+                <button onclick="setPingTargetIp('203.0.113.1')" class="win32-btn">203.0.113.1 (ISP)</button>
+                <button onclick="setPingTargetIp('8.8.8.8')" class="win32-btn">8.8.8.8 (Inet)</button>
+                <button onclick="setPingTargetIp('192.168.88.10')" class="win32-btn">192.168.88.10 (PC1)</button>
+                <button onclick="setPingTargetIp('192.168.10.20')" class="win32-btn">192.168.10.20 (PC2)</button>
+              </div>
+            </div>
+            <div class="wb-table-scroll" id="ping-scroll-box">
+              <table class="wb-table">
+                <thead>
+                  <tr>
+                    <th>Seq</th>
+                    <th>Host</th>
+                    <th>Size</th>
+                    <th>TTL</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-ping"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="win-log" class="wb-window" style="top: 433px; left: 6px; width: 450px; height: 195px; z-index: 8;" onpointerdown="focusWinboxWindow('log')">
+            <div class="wb-titlebar" data-drag-window="log">
+              <span>Log</span>
+              <div class="flex items-center gap-0.5">
+                <button onclick="clearSystemLogs()" class="wb-ctrl-btn" style="width:auto;padding:0 4px;">Clear</button>
+                <button onclick="minimizeWinboxWindow('log')" class="wb-ctrl-btn" title="Minimize">_</button>
+                <button onclick="closeWinboxWindow('log')" class="wb-ctrl-btn" title="Close">✕</button>
+              </div>
+            </div>
+            <div class="flex-1 overflow-auto bg-white p-1 mono text-[11px] text-black space-y-0.5" id="log-container"></div>
+          </div>
+
+          <div id="win-terminal" class="wb-window" style="top: 433px; left: 464px; width: 430px; height: 195px; z-index: 15;" onpointerdown="focusWinboxWindow('terminal')">
+            <div class="wb-titlebar" data-drag-window="terminal">
+              <span>Terminal - [admin@Karim-hAP]</span>
+              <div class="flex items-center gap-0.5">
+                <button onclick="clearTerminalOutput()" class="wb-ctrl-btn" style="width:auto;padding:0 4px;">Cls</button>
+                <button onclick="minimizeWinboxWindow('terminal')" class="wb-ctrl-btn" title="Minimize">_</button>
+                <button onclick="closeWinboxWindow('terminal')" class="wb-ctrl-btn" title="Close">✕</button>
+              </div>
+            </div>
+            <div class="flex-1 flex flex-col bg-black text-neutral-100 mono text-[11px] p-1.5 overflow-hidden min-h-0">
+              <div id="terminal-history" onclick="focusCliInput()" class="flex-1 overflow-y-auto space-y-0.5 terminal-output pr-1 min-h-0"></div>
+
+              <div id="cli-touch-keys" class="flex items-center gap-1 py-1 border-t border-neutral-800 overflow-x-auto shrink-0 select-none">
+                <button type="button" onpointerdown="handleVirtualCliKey(event, 'TAB')" class="win32-btn">[TAB]</button>
+                <button type="button" onpointerdown="handleVirtualCliKey(event, 'CTRL_C')" class="win32-btn">[Ctrl+C]</button>
+                <button type="button" onpointerdown="handleVirtualCliKey(event, 'UP')" class="win32-btn">[↑]</button>
+                <button type="button" onpointerdown="handleVirtualCliKey(event, 'DOWN')" class="win32-btn">[↓]</button>
+                <button type="button" onpointerdown="handleVirtualCliKey(event, 'CMD_IFACE')" class="win32-btn">/interface print</button>
+                <button type="button" onpointerdown="handleVirtualCliKey(event, 'CMD_IP')" class="win32-btn">/ip address print</button>
+                <button type="button" onpointerdown="handleVirtualCliKey(event, 'CMD_PING')" class="win32-btn">/ping 8.8.8.8</button>
+              </div>
+
+              <div class="flex items-center gap-1 pt-1 border-t border-neutral-800 shrink-0">
+                <span class="text-white font-bold shrink-0">[admin@Karim-hAP] &gt;</span>
+                <input id="cli-input" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" class="flex-1 bg-black text-white focus:outline-none mono text-[11px] min-w-0" />
+                <button type="button" onclick="submitCliInputBtn()" class="win32-btn">Run</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <footer class="h-6 win32-bar border-t border-neutral-500 px-2 flex items-center justify-between text-[11px] shrink-0 z-20">
+        <div class="flex items-center gap-2 truncate" id="winbox-taskbar">
+          <span>RouterOS v6.49.10 (stable)</span>
+          <span>|</span>
+          <span id="status-bar-msg" class="truncate">Ready</span>
+        </div>
+        <div class="shrink-0 font-bold">RB951Ui-2nD | Karim</div>
+      </footer>
+    </section>
+
+  </main>
+
+  <nav id="mobile-bottom-nav" class="flex md:hidden h-11 win32-bar border-t border-neutral-600 px-1 items-center justify-around shrink-0 z-40 select-none">
+    <button id="mob-tab-3d" onclick="switchMobileTab('3d')" class="win32-btn active flex-1 mx-0.5 py-1.5 font-bold">[3D Router View]</button>
+    <button id="mob-tab-winbox" onclick="switchMobileTab('winbox')" class="win32-btn flex-1 mx-0.5 py-1.5 font-bold">[Winbox GUI]</button>
+    <button id="mob-tab-terminal" onclick="switchMobileTab('terminal')" class="win32-btn flex-1 mx-0.5 py-1.5 font-bold">[RouterOS Terminal]</button>
+  </nav>
+
+  <script>
+    let audioCtx = null;
+    let sfxMuted = false;
+
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playMechanicalClick(plugIn = true) {
+      if (sfxMuted) return;
+      try {
+        ensureAudioContext();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(plugIn ? 540 : 960, now);
+        osc.frequency.exponentialRampToValueAtTime(plugIn ? 1400 : 320, now + 0.045);
+        gain.gain.setValueAtTime(0.24, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.065);
+      } catch (e) {}
+    }
+
+    function playRouterBeep(freq = 900, dur = 0.12) {
+      if (sfxMuted) return;
+      try {
+        ensureAudioContext();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + dur + 0.01);
+      } catch (e) {}
+    }
+
+    function toggleAudioMute() {
+      sfxMuted = !sfxMuted;
+      const lbl = document.getElementById('label-audio');
+      if (lbl) lbl.textContent = sfxMuted ? 'SFX: OFF' : 'SFX: ON';
+      if (!sfxMuted) playMechanicalClick(true);
+    }
+
+    function isValidIpv4(ip) {
+      const parts = String(ip).trim().split('.');
+      if (parts.length !== 4) return false;
+      return parts.every(p => /^\d+$/.test(p) && Number(p) >= 0 && Number(p) <= 255);
+    }
+
+    function parseCidrAddress(cidr) {
+      const p = String(cidr).trim().split('/');
+      if (p.length !== 2) return null;
+      const ip = p[0];
+      const prefix = Number(p[1]);
+      if (!isValidIpv4(ip) || isNaN(prefix) || prefix < 0 || prefix > 32) return null;
+      return { ip, prefix };
+    }
+
+    function ipToInt(ip) {
+      const p = ip.split('.').map(Number);
+      return (((p[0] << 24) >>> 0) | ((p[1] << 16) >>> 0) | ((p[2] << 8) >>> 0) | (p[3] >>> 0)) >>> 0;
+    }
+
+    function intToIp(n) {
+      return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+    }
+
+    function getMaskFromPrefix(prefix) {
+      return prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
+    }
+
+    function calculateNetworkAddress(ip, prefix) {
+      return intToIp((ipToInt(ip) & getMaskFromPrefix(prefix)) >>> 0);
+    }
+
+    function isIpInSubnet(targetIp, netIp, prefix) {
+      if (!isValidIpv4(targetIp) || !isValidIpv4(netIp)) return false;
+      const mask = getMaskFromPrefix(prefix);
+      return ((ipToInt(targetIp) & mask) >>> 0) === ((ipToInt(netIp) & mask) >>> 0);
+    }
+
+    const EXTERNAL_NODES = {
+      'ISP': { id: 'ISP', shortName: 'ISP-GW', ip: '203.0.113.1', prefix: 24, gateway: '203.0.113.254', colorHex: 0x2563eb },
+      'PC-1': { id: 'PC-1', shortName: 'PC-1', ip: '192.168.88.10', prefix: 24, gateway: '192.168.88.1', colorHex: 0x16a34a },
+      'PC-2': { id: 'PC-2', shortName: 'PC-2', ip: '192.168.10.20', prefix: 24, gateway: '192.168.10.1', colorHex: 0xd97706 }
+    };
+
+    const state = {
+      booting: false,
+      uptimeSeconds: 12,
+      mobileTab: '3d',
+      activeMobileWinboxModal: 'interfaces',
+      drawerOpen: true,
+      interfaces: [],
+      ipAddresses: [],
+      staticRoutes: [],
+      computedRoutes: [],
+      logs: [],
+      ping: { active: false, source: 'router', targetIp: '192.168.88.10', seq: 0, sent: 0, received: 0, results: [], timer: null, cliMode: false },
+      cliHistory: ['/interface print', '/ip address print', '/ip route print', '/ping 8.8.8.8'],
+      cliHistoryIndex: -1
+    };
+
+    function getRouterOsTimestamp() {
+      const d = new Date();
+      const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+      const m = months[d.getMonth()];
+      const day = String(d.getDate()).padStart(2, '0');
+      const t = d.toTimeString().split(' ')[0];
+      return `${m}/${day} ${t}`;
+    }
+
+    function addSystemLog(topics, message) {
+      state.logs.push({ id: Date.now() + Math.random(), time: getRouterOsTimestamp(), topics, message });
+      if (state.logs.length > 100) state.logs.shift();
+      renderLogWindow();
+    }
+
+    function isInterfaceRunning(ifaceName) {
+      const iface = state.interfaces.find(i => i.name === ifaceName);
+      return Boolean(iface && !iface.disabled && iface.connectedNode !== null && !state.booting);
+    }
+
+    function initDefaultLabState(silent = false) {
+      stopActivePing();
+      state.interfaces = [
+        { id: 1, name: 'ether1', mac: 'E4:8D:8C:4A:11:01', mtu: 1500, disabled: false, connectedNode: 'ISP', txPackets: 142, rxPackets: 138, lastBlink: 0 },
+        { id: 2, name: 'ether2', mac: 'E4:8D:8C:4A:11:02', mtu: 1500, disabled: false, connectedNode: 'PC-1', txPackets: 96, rxPackets: 94, lastBlink: 0 },
+        { id: 3, name: 'ether3', mac: 'E4:8D:8C:4A:11:03', mtu: 1500, disabled: false, connectedNode: 'PC-2', txPackets: 24, rxPackets: 19, lastBlink: 0 },
+        { id: 4, name: 'ether4', mac: 'E4:8D:8C:4A:11:04', mtu: 1500, disabled: false, connectedNode: null, txPackets: 0, rxPackets: 0, lastBlink: 0 },
+        { id: 5, name: 'ether5', mac: 'E4:8D:8C:4A:11:05', mtu: 1500, disabled: false, connectedNode: null, txPackets: 0, rxPackets: 0, lastBlink: 0 }
+      ];
+      state.ipAddresses = [
+        { id: 101, address: '203.0.113.2/24', ip: '203.0.113.2', prefix: 24, network: '203.0.113.0', interface: 'ether1' },
+        { id: 102, address: '192.168.88.1/24', ip: '192.168.88.1', prefix: 24, network: '192.168.88.0', interface: 'ether2' },
+        { id: 103, address: '192.168.10.1/24', ip: '192.168.10.1', prefix: 24, network: '192.168.10.0', interface: 'ether3' }
+      ];
+      state.staticRoutes = [
+        { id: 201, dstAddress: '0.0.0.0/0', dstIp: '0.0.0.0', prefix: 0, gateway: '203.0.113.1', distance: 1 }
+      ];
+      state.logs = [];
+      addSystemLog('system,info', 'router booted (RB951Ui-2nD)');
+      addSystemLog('interface,info', 'ether1 link up (speed 100M, full duplex)');
+      addSystemLog('interface,info', 'ether2 link up (speed 100M, full duplex)');
+      addSystemLog('interface,info', 'ether3 link up (speed 100M, full duplex)');
+      addSystemLog('system,info,account', 'user admin logged in from 192.168.88.10 via winbox');
+
+      recomputeRoutingTable();
+      syncAllViews();
+      if (!silent) setStatusBar('Configuration reset to default');
+    }
+
+    function recomputeRoutingTable() {
+      const routes = [];
+      state.ipAddresses.forEach(addr => {
+        if (isInterfaceRunning(addr.interface)) {
+          routes.push({
+            id: 'dac-' + addr.id, flags: 'DAC',
+            dstAddress: `${addr.network}/${addr.prefix}`, dstIp: addr.network, prefix: addr.prefix,
+            gateway: addr.interface, gatewayStatus: `${addr.interface} reachable`,
+            distance: 0, prefSrc: addr.ip, active: true, dynamic: true, outInterface: addr.interface
+          });
+        }
+      });
+
+      state.staticRoutes.forEach(sr => {
+        let outIface = null;
+        for (const addr of state.ipAddresses) {
+          if (isInterfaceRunning(addr.interface) && isIpInSubnet(sr.gateway, addr.network, addr.prefix)) {
+            outIface = addr.interface;
+            break;
+          }
+        }
+        const active = outIface !== null;
+        routes.push({
+          id: sr.id, flags: active ? 'AS' : 'S',
+          dstAddress: sr.dstAddress, dstIp: sr.dstIp, prefix: sr.prefix,
+          gateway: sr.gateway,
+          gatewayStatus: active ? `${sr.gateway} reachable via ${outIface}` : `${sr.gateway} unreachable`,
+          distance: sr.distance || 1, prefSrc: '', active, dynamic: false, outInterface: outIface
+        });
+      });
+      state.computedRoutes = routes;
+    }
+
+    function lookupActiveRoute(dstIp) {
+      const candidates = state.computedRoutes.filter(r => r.active && isIpInSubnet(dstIp, r.dstIp, r.prefix));
+      candidates.sort((a, b) => (b.prefix - a.prefix) || (a.distance - b.distance));
+      return candidates[0] || null;
+    }
+
+    function computeSyntheticRtt(hops, dstIpInt) {
+      const seed = ((dstIpInt & 255) + state.ping.seq * 7) % 10;
+      const base = hops === 1 ? 0.6 : (hops === 2 ? 1.8 : 11.4);
+      return (base + seed * 0.15).toFixed(1);
+    }
+
+    function verifyLinkDelivery(ifaceName, dstIp, viaGatewayIp) {
+      const iface = state.interfaces.find(i => i.name === ifaceName);
+      if (!iface || !isInterfaceRunning(ifaceName)) return { ok: false, reason: 'timeout' };
+      const node = EXTERNAL_NODES[iface.connectedNode];
+      if (!node) return { ok: false, reason: 'timeout' };
+
+      const boundAddrs = state.ipAddresses.filter(a => a.interface === ifaceName);
+      if (boundAddrs.length === 0) return { ok: false, reason: 'no route to host' };
+
+      const dstInt = ipToInt(dstIp);
+      if (dstIp === node.ip) {
+        const sameNet = boundAddrs.some(a =>
+          isIpInSubnet(node.ip, a.network, a.prefix) &&
+          isIpInSubnet(a.ip, calculateNetworkAddress(node.ip, node.prefix), node.prefix)
+        );
+        if (!sameNet) return { ok: false, reason: 'timeout' };
+        return { ok: true, ttl: 64, rtt: computeSyntheticRtt(1, dstInt) };
+      }
+
+      if (viaGatewayIp && viaGatewayIp === node.ip && node.id === 'ISP') {
+        const gwValid = boundAddrs.some(a => isIpInSubnet(node.ip, a.network, a.prefix));
+        if (!gwValid) return { ok: false, reason: 'timeout' };
+        if (dstIp === '8.8.8.8' || dstIp === '1.1.1.1' || dstIp === '203.0.113.1') {
+          return { ok: true, ttl: 56, rtt: computeSyntheticRtt(3, dstInt) };
+        }
+        return { ok: false, reason: 'timeout' };
+      }
+      return { ok: false, reason: 'timeout' };
+    }
+
+    function evaluatePingAttempt(sourceId, targetIp) {
+      if (state.booting) return { ok: false, status: 'timeout', rtt: null, cables: [], ports: [] };
+      if (!isValidIpv4(targetIp)) return { ok: false, status: 'invalid value for argument address', rtt: null, cables: [], ports: [] };
+
+      if (sourceId === 'router') {
+        for (const addr of state.ipAddresses) {
+          if (addr.ip === targetIp && isInterfaceRunning(addr.interface)) {
+            return { ok: true, status: 'echo reply', ttl: 64, rtt: '0.2', cables: [], ports: [addr.interface] };
+          }
+        }
+        const rt = lookupActiveRoute(targetIp);
+        if (!rt) return { ok: false, status: 'no route to host', rtt: null, cables: [], ports: [] };
+
+        const outIface = rt.outInterface;
+        const linkRes = verifyLinkDelivery(outIface, targetIp, rt.flags === 'AS' ? rt.gateway : null);
+        const ifaceObj = state.interfaces.find(i => i.name === outIface);
+        if (ifaceObj) {
+          ifaceObj.txPackets += 1;
+          ifaceObj.lastBlink = performance.now();
+          if (linkRes.ok) ifaceObj.rxPackets += 1;
+        }
+        return linkRes.ok
+          ? { ok: true, status: 'echo reply', ttl: linkRes.ttl, rtt: linkRes.rtt, cables: [outIface], ports: [outIface] }
+          : { ok: false, status: linkRes.reason, rtt: null, cables: [outIface], ports: [outIface] };
+      }
+
+      const srcNode = EXTERNAL_NODES[sourceId];
+      if (!srcNode) return { ok: false, status: 'no route to host', rtt: null, cables: [], ports: [] };
+
+      const inIface = state.interfaces.find(i => i.connectedNode === sourceId);
+      if (!inIface || !isInterfaceRunning(inIface.name)) {
+        return { ok: false, status: 'timeout', rtt: null, cables: [], ports: [] };
+      }
+      inIface.rxPackets += 1;
+      inIface.lastBlink = performance.now();
+
+      if (targetIp === srcNode.ip) {
+        return { ok: true, status: 'echo reply', ttl: 64, rtt: '0.1', cables: [], ports: [] };
+      }
+
+      const inAddrs = state.ipAddresses.filter(a =>
+        a.interface === inIface.name && isIpInSubnet(srcNode.ip, a.network, a.prefix)
+      );
+      if (inAddrs.length === 0) {
+        return { ok: false, status: 'timeout', rtt: null, cables: [inIface.name], ports: [inIface.name] };
+      }
+
+      const isRouterIp = state.ipAddresses.some(a => a.ip === targetIp && isInterfaceRunning(a.interface));
+      const gwMatched = inAddrs.some(a => a.ip === srcNode.gateway);
+
+      if (isRouterIp) {
+        const sameNet = isIpInSubnet(targetIp, calculateNetworkAddress(srcNode.ip, srcNode.prefix), srcNode.prefix);
+        if (sameNet || gwMatched) {
+          inIface.txPackets += 1;
+          return { ok: true, status: 'echo reply', ttl: 64, rtt: computeSyntheticRtt(1, ipToInt(targetIp)), cables: [inIface.name], ports: [inIface.name] };
+        }
+        return { ok: false, status: 'no route to host', rtt: null, cables: [inIface.name], ports: [inIface.name] };
+      }
+
+      if (!gwMatched) {
+        return { ok: false, status: 'no route to host', rtt: null, cables: [inIface.name], ports: [inIface.name] };
+      }
+
+      const rt = lookupActiveRoute(targetIp);
+      if (!rt) {
+        return { ok: false, status: 'no route to host', rtt: null, cables: [inIface.name], ports: [inIface.name] };
+      }
+
+      const outIface = state.interfaces.find(i => i.name === rt.outInterface);
+      if (outIface) {
+        outIface.txPackets += 1;
+        outIface.lastBlink = performance.now();
+      }
+
+      const dstRes = verifyLinkDelivery(rt.outInterface, targetIp, rt.flags === 'AS' ? rt.gateway : null);
+      if (dstRes.ok) {
+        if (outIface) outIface.rxPackets += 1;
+        inIface.txPackets += 1;
+        return {
+          ok: true, status: 'echo reply', ttl: dstRes.ttl - 1,
+          rtt: (Number(dstRes.rtt) + 0.8).toFixed(1),
+          cables: [inIface.name, rt.outInterface], ports: [inIface.name, rt.outInterface]
+        };
+      }
+      return { ok: false, status: dstRes.reason, rtt: null, cables: [inIface.name, rt.outInterface], ports: [inIface.name, rt.outInterface] };
+    }
+
+    let lastPortActionTimestamp = 0;
+
+    function togglePortCable(portIndex, preferredNodeId = null, bypassGuard = false) {
+      const now = performance.now();
+      if (!bypassGuard && (now - lastPortActionTimestamp) < 320) return;
+      lastPortActionTimestamp = now;
+
+      const iface = state.interfaces.find(i => i.id === portIndex);
+      if (!iface) return;
+
+      if (iface.connectedNode !== null && !preferredNodeId) {
+        iface.connectedNode = null;
+        playMechanicalClick(false);
+        addSystemLog('interface,info', `${iface.name} link down`);
+        setStatusBar(`${iface.name} link down`);
+      } else {
+        let targetNode = preferredNodeId;
+        if (!targetNode) {
+          const used = state.interfaces.map(i => i.connectedNode).filter(Boolean);
+          const all = ['ISP', 'PC-1', 'PC-2'];
+          targetNode = all.find(n => !used.includes(n)) || all[(portIndex - 1) % all.length];
+        }
+        state.interfaces.forEach(other => {
+          if (other.id !== portIndex && other.connectedNode === targetNode) {
+            other.connectedNode = null;
+            addSystemLog('interface,info', `${other.name} link down`);
+          }
+        });
+        iface.connectedNode = targetNode;
+        playMechanicalClick(true);
+        addSystemLog('interface,info', `${iface.name} link up (speed 100M, full duplex)`);
+        setStatusBar(`${iface.name} link up (${targetNode})`);
+      }
+
+      recomputeRoutingTable();
+      syncAllViews();
+      rebuild3DCables();
+      pulsePortHighlight3D(portIndex);
+    }
+
+    function changePortNodeAssignment(portIndex, val) {
+      const iface = state.interfaces.find(i => i.id === portIndex);
+      if (!iface) return;
+      if (val === 'NONE') {
+        if (iface.connectedNode !== null) togglePortCable(portIndex, null, true);
+      } else {
+        togglePortCable(portIndex, val, true);
+      }
+    }
+
+    function toggleInterfaceDisabled(portIndex) {
+      const iface = state.interfaces.find(i => i.id === portIndex);
+      if (!iface) return;
+      iface.disabled = !iface.disabled;
+      addSystemLog('system,info', `interface ${iface.name} ${iface.disabled ? 'disabled' : 'enabled'} by admin`);
+      recomputeRoutingTable();
+      syncAllViews();
+    }
+
+    function toggleQuickPortDrawer() {
+      state.drawerOpen = !state.drawerOpen;
+      const body = document.getElementById('patch-panel-body');
+      const icon = document.getElementById('icon-drawer-chevron');
+      if (body) body.style.display = state.drawerOpen ? 'block' : 'none';
+      if (icon) icon.style.transform = state.drawerOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+      setTimeout(handleThreeResize, 50);
+    }
+
+    function addIpAddressEntry(cidrStr, ifaceName) {
+      const parsed = parseCidrAddress(cidrStr);
+      if (!parsed) return { ok: false, msg: 'failure: invalid address' };
+      if (!state.interfaces.some(i => i.name === ifaceName)) return { ok: false, msg: 'failure: unknown interface' };
+
+      const netAddr = calculateNetworkAddress(parsed.ip, parsed.prefix);
+      if (state.ipAddresses.some(a => a.address === `${parsed.ip}/${parsed.prefix}` && a.interface === ifaceName)) {
+        return { ok: false, msg: 'failure: already have such address' };
+      }
+      const entry = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        address: `${parsed.ip}/${parsed.prefix}`, ip: parsed.ip, prefix: parsed.prefix,
+        network: netAddr, interface: ifaceName
+      };
+      state.ipAddresses.push(entry);
+      addSystemLog('system,info', `address ${entry.address} added by admin`);
+      recomputeRoutingTable();
+      syncAllViews();
+      return { ok: true, entry };
+    }
+
+    function removeIpAddressEntry(idOrIdx, isCli = false) {
+      const idx = isCli ? Number(idOrIdx) : state.ipAddresses.findIndex(a => a.id === idOrIdx);
+      if (idx < 0 || idx >= state.ipAddresses.length) return { ok: false, msg: 'no such item' };
+      const removed = state.ipAddresses.splice(idx, 1)[0];
+      addSystemLog('system,info', `address ${removed.address} removed by admin`);
+      recomputeRoutingTable();
+      syncAllViews();
+      return { ok: true, removed };
+    }
+
+    function addStaticRouteEntry(dstCidr, gwIp) {
+      const parsed = parseCidrAddress(dstCidr);
+      if (!parsed) return { ok: false, msg: 'failure: invalid dst-address' };
+      if (!isValidIpv4(gwIp)) return { ok: false, msg: 'failure: invalid gateway' };
+
+      const netDst = calculateNetworkAddress(parsed.ip, parsed.prefix);
+      const entry = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        dstAddress: `${netDst}/${parsed.prefix}`, dstIp: netDst, prefix: parsed.prefix,
+        gateway: gwIp.trim(), distance: 1
+      };
+      state.staticRoutes.push(entry);
+      addSystemLog('system,info', `route ${entry.dstAddress} added by admin`);
+      recomputeRoutingTable();
+      syncAllViews();
+      return { ok: true, entry };
+    }
+
+    function removeStaticRouteEntry(routeId) {
+      const idx = state.staticRoutes.findIndex(r => String(r.id) === String(routeId));
+      if (idx === -1) return { ok: false, msg: 'failure: cannot remove dynamic route' };
+      const removed = state.staticRoutes.splice(idx, 1)[0];
+      addSystemLog('system,info', `route ${removed.dstAddress} removed by admin`);
+      recomputeRoutingTable();
+      syncAllViews();
+      return { ok: true };
+    }
+
+    function triggerRouterReboot() {
+      if (state.booting) return;
+      stopActivePing();
+      state.booting = true;
+      playRouterBeep(900, 0.12);
+      addSystemLog('system,info', 'system rebooted by admin');
+      appendTerminalLine('Rebooting...');
+      setStatusBar('Rebooting...');
+      recomputeRoutingTable();
+      syncAllViews();
+
+      setTimeout(() => {
+        playRouterBeep(1200, 0.16);
+        state.booting = false;
+        state.uptimeSeconds = 0;
+        addSystemLog('system,info', 'router booted (RB951Ui-2nD)');
+        state.interfaces.forEach(iface => {
+          if (iface.connectedNode && !iface.disabled) {
+            addSystemLog('interface,info', `${iface.name} link up (speed 100M, full duplex)`);
+          }
+        });
+        recomputeRoutingTable();
+        syncAllViews();
+        appendTerminalLine('KarimOS v6.49.10 (RB951Ui-2nD) ready.');
+        setStatusBar('Ready');
+      }, 2200);
+    }
+
+    function setPingTargetIp(ip) {
+      const el = document.getElementById('input-ping-target');
+      if (el) el.value = ip;
+    }
+
+    function startGuiPing() {
+      const t = document.getElementById('input-ping-target');
+      const s = document.getElementById('select-ping-src');
+      startPingSession(t ? t.value.trim() : '192.168.88.10', s ? s.value : 'router', false);
+    }
+
+    function startPingSession(targetIp, source = 'router', fromCli = false) {
+      stopActivePing();
+      state.ping.active = true;
+      state.ping.source = source;
+      state.ping.targetIp = targetIp;
+      state.ping.seq = 0;
+      state.ping.sent = 0;
+      state.ping.received = 0;
+      state.ping.results = [];
+      state.ping.cliMode = fromCli;
+
+      const t = document.getElementById('input-ping-target');
+      if (t) t.value = targetIp;
+      const s = document.getElementById('select-ping-src');
+      if (s) s.value = source;
+
+      if (fromCli) appendTerminalLine('  SEQ HOST                                     SIZE TTL TIME  STATUS');
+
+      const tick = () => {
+        if (!state.ping.active) return;
+        const seq = state.ping.seq++;
+        state.ping.sent++;
+        const res = evaluatePingAttempt(state.ping.source, state.ping.targetIp);
+        if (res.ok) state.ping.received++;
+
+        if (res.cables && res.cables.length > 0) {
+          res.cables.forEach((ifaceName, idx) => spawnCablePacketParticle(ifaceName, res.ok, idx * 130));
+        }
+
+        state.ping.results.push({
+          seq, host: state.ping.targetIp,
+          size: res.ok ? '56' : '-', ttl: res.ok ? String(res.ttl) : '-',
+          time: res.ok ? `${res.rtt}ms` : '-', status: res.status, ok: res.ok
+        });
+        if (state.ping.results.length > 50) state.ping.results.shift();
+
+        renderPingWindow();
+        renderInterfacesWindow();
+
+        if (state.ping.cliMode) {
+          const seqStr = String(seq).padStart(5, ' ');
+          const hostStr = state.ping.targetIp.padEnd(40, ' ');
+          if (res.ok) {
+            appendTerminalLine(`${seqStr} ${hostStr} 56   ${String(res.ttl).padEnd(3, ' ')} ${res.rtt}ms`);
+          } else {
+            appendTerminalLine(`${seqStr} ${hostStr}               ${res.status}`);
+          }
+          if (state.ping.sent >= 6) stopActivePing(true);
+        }
+      };
+
+      tick();
+      state.ping.timer = setInterval(tick, 900);
+      renderPingWindow();
+    }
+
+    function stopActivePing(fromCliFinish = false) {
+      if (state.ping.timer) {
+        clearInterval(state.ping.timer);
+        state.ping.timer = null;
+      }
+      const wasActive = state.ping.active;
+      const wasCli = state.ping.cliMode;
+      state.ping.active = false;
+      state.ping.cliMode = false;
+
+      if (wasActive && (wasCli || fromCliFinish)) {
+        const loss = state.ping.sent > 0 ? Math.round(((state.ping.sent - state.ping.received) / state.ping.sent) * 100) : 0;
+        appendTerminalLine(`    sent=${state.ping.sent} received=${state.ping.received} packet-loss=${loss}%`);
+      }
+      renderPingWindow();
+    }
+
+    function syncAllViews() {
+      renderPatchPanel();
+      renderInterfacesWindow();
+      renderAddressesWindow();
+      renderRoutesWindow();
+      renderPingWindow();
+      renderLogWindow();
+      updateLedDomIndicators();
+    }
+
+    function renderPatchPanel() {
+      const grid = document.getElementById('patch-panel-grid');
+      if (!grid) return;
+      let linked = 0;
+
+      grid.innerHTML = state.interfaces.map(iface => {
+        const running = isInterfaceRunning(iface.name);
+        if (iface.connectedNode) linked++;
+        const stateText = iface.disabled ? 'X' : (running ? 'R' : '-');
+        return `
+          <div class="bg-[#ece9d8] border border-neutral-600 p-1 flex flex-col justify-between text-[#111]">
+            <div class="flex items-center justify-between mono text-[11px] font-bold">
+              <span>${iface.name}</span>
+              <span class="px-1 border border-neutral-500 ${running ? 'bg-green-700 text-white' : 'bg-neutral-300 text-black'}">${stateText}</span>
+            </div>
+            <select onchange="changePortNodeAssignment(${iface.id}, this.value)" class="win32-input mono mt-1 w-full">
+              <option value="NONE" ${!iface.connectedNode ? 'selected' : ''}>unplugged</option>
+              <option value="ISP" ${iface.connectedNode === 'ISP' ? 'selected' : ''}>ISP (203.0.113.1)</option>
+              <option value="PC-1" ${iface.connectedNode === 'PC-1' ? 'selected' : ''}>PC-1 (192.168.88.10)</option>
+              <option value="PC-2" ${iface.connectedNode === 'PC-2' ? 'selected' : ''}>PC-2 (192.168.10.20)</option>
+            </select>
+            <button onclick="togglePortCable(${iface.id})" class="win32-btn mt-1 w-full">
+              ${iface.connectedNode ? 'Cabut Kabel' : 'Colok Kabel'}
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      const hint = document.getElementById('patch-status-hint');
+      if (hint) hint.textContent = `${linked}/5 Linked`;
+    }
+
+    function renderInterfacesWindow() {
+      const tbody = document.getElementById('tbody-interfaces');
+      if (!tbody) return;
+      tbody.innerHTML = state.interfaces.map(iface => {
+        const running = isInterfaceRunning(iface.name);
+        const flag = iface.disabled ? 'X' : (running ? 'R' : '');
+        const partner = iface.connectedNode ? `${iface.connectedNode} (${EXTERNAL_NODES[iface.connectedNode].ip})` : 'no-link';
+        return `
+          <tr class="${iface.disabled ? 'wb-flag-dim' : ''}">
+            <td><span class="wb-flag">${flag}</span></td>
+            <td>${iface.name}</td>
+            <td>ether</td>
+            <td class="mono">${partner}</td>
+            <td class="mono">${iface.txPackets}</td>
+            <td class="mono">${iface.rxPackets}</td>
+            <td>
+              <button onclick="togglePortCable(${iface.id})" class="win32-btn">${iface.connectedNode ? 'Unplug' : 'Plug'}</button>
+              <button onclick="toggleInterfaceDisabled(${iface.id})" class="win32-btn">${iface.disabled ? 'Enable' : 'Disable'}</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderAddressesWindow() {
+      const tbody = document.getElementById('tbody-addresses');
+      if (!tbody) return;
+      if (state.ipAddresses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5">No IP addresses configured</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = state.ipAddresses.map(addr => {
+        const running = isInterfaceRunning(addr.interface);
+        const flag = running ? '' : 'I';
+        return `
+          <tr class="${running ? '' : 'text-red-700'}">
+            <td><span class="wb-flag">${flag}</span></td>
+            <td class="mono">${addr.address}</td>
+            <td class="mono">${addr.network}</td>
+            <td>${addr.interface}</td>
+            <td><button onclick="removeIpAddressEntry(${addr.id}, false)" class="win32-btn">Remove</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function handleGuiAddAddress() {
+      const a = document.getElementById('input-ip-addr');
+      const i = document.getElementById('select-ip-iface');
+      if (!a || !i) return;
+      const res = addIpAddressEntry(a.value, i.value);
+      setStatusBar(res.ok ? `Address ${res.entry.address} added` : res.msg);
+    }
+
+    function renderRoutesWindow() {
+      const tbody = document.getElementById('tbody-routes');
+      if (!tbody) return;
+      if (state.computedRoutes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6">No active routes</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = state.computedRoutes.map(rt => {
+        const act = rt.dynamic
+          ? `<span class="text-neutral-500">dynamic</span>`
+          : `<button onclick="removeStaticRouteEntry('${rt.id}')" class="win32-btn">Remove</button>`;
+        return `
+          <tr class="${rt.active ? '' : 'wb-flag-dim'}">
+            <td><span class="wb-flag">${rt.flags}</span></td>
+            <td class="mono">${rt.dstAddress}</td>
+            <td class="mono">${rt.gateway}</td>
+            <td class="mono">${rt.gatewayStatus}</td>
+            <td class="mono">${rt.distance}</td>
+            <td>${act}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function handleGuiAddRoute() {
+      const d = document.getElementById('input-route-dst');
+      const g = document.getElementById('input-route-gw');
+      if (!d || !g) return;
+      const res = addStaticRouteEntry(d.value, g.value);
+      setStatusBar(res.ok ? `Route ${res.entry.dstAddress} added` : res.msg);
+    }
+
+    function renderPingWindow() {
+      const tbody = document.getElementById('tbody-ping');
+      const startBtn = document.getElementById('btn-ping-start');
+      const stopBtn = document.getElementById('btn-ping-stop');
+      if (!tbody) return;
+      if (startBtn && stopBtn) {
+        startBtn.disabled = state.ping.active;
+        stopBtn.disabled = !state.ping.active;
+      }
+      if (state.ping.results.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6">Idle</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = state.ping.results.map(r => `
+        <tr class="${r.ok ? '' : 'text-red-700'}">
+          <td class="mono">${r.seq}</td>
+          <td class="mono">${r.host}</td>
+          <td class="mono">${r.size}</td>
+          <td class="mono">${r.ttl}</td>
+          <td class="mono">${r.time}</td>
+          <td class="mono">${r.status}</td>
+        </tr>
+      `).join('');
+      const box = document.getElementById('ping-scroll-box');
+      if (box) box.scrollTop = box.scrollHeight;
+    }
+
+    function renderLogWindow() {
+      const container = document.getElementById('log-container');
+      if (!container) return;
+      container.innerHTML = state.logs.map(item => {
+        const isErr = item.message.includes('down') || item.message.includes('removed');
+        return `<div class="${isErr ? 'text-red-800' : 'text-black'}">${item.time} ${item.topics} ${escapeHtml(item.message)}</div>`;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearSystemLogs() {
+      state.logs = [];
+      addSystemLog('system,info', 'log buffer cleared by admin');
+    }
+
+    function setStatusBar(msg) {
+      const el = document.getElementById('status-bar-msg');
+      if (el) el.textContent = msg;
+    }
+
+    function resetLabState() {
+      initDefaultLabState(false);
+      rebuild3DCables();
+      appendTerminalLine('system configuration reset');
+    }
+
+    const CLI_COMMANDS = [
+      '/interface print',
+      '/ip address print',
+      '/ip address add address=',
+      '/ip address remove ',
+      '/ip route print',
+      '/ip route add dst-address=0.0.0.0/0 gateway=',
+      '/ip route remove ',
+      '/ping ',
+      '/log print',
+      '/system reboot',
+      '/help',
+      '/clear'
+    ];
+
+    function initTerminalBanner() {
+      const hist = document.getElementById('terminal-history');
+      if (!hist) return;
+      hist.innerHTML = [
+        'MikroTik RouterOS 6.49.10 (c) 1999-2026       http://www.mikrotik.com/',
+        'RouterBOARD RB951Ui-2nD (hAP) | Special Build by Karim',
+        'Press [TAB] for command completion or type /help'
+      ].map(l => `<div>${l}</div>`).join('');
+    }
+
+    function appendTerminalLine(textOrHtml) {
+      const hist = document.getElementById('terminal-history');
+      if (!hist) return;
+      const div = document.createElement('div');
+      div.className = 'whitespace-pre-wrap leading-tight break-words';
+      div.innerHTML = textOrHtml;
+      hist.appendChild(div);
+      hist.scrollTop = hist.scrollHeight;
+    }
+
+    function clearTerminalOutput() { initTerminalBanner(); }
+
+    function focusCliInput() {
+      const inp = document.getElementById('cli-input');
+      if (inp) {
+        inp.focus({ preventScroll: true });
+        const hist = document.getElementById('terminal-history');
+        if (hist) hist.scrollTop = hist.scrollHeight;
+      }
+    }
+
+    function submitCliInputBtn() {
+      const inp = document.getElementById('cli-input');
+      if (!inp) return;
+      const val = inp.value;
+      inp.value = '';
+      executeCliCommand(val);
+      focusCliInput();
+    }
+
+    function handleVirtualCliKey(e, action) {
+      if (e) e.preventDefault();
+      const inp = document.getElementById('cli-input');
+      if (!inp) return;
+      if (action === 'TAB') {
+        triggerCliAutocomplete(inp);
+      } else if (action === 'CTRL_C') {
+        if (state.ping.active) stopActivePing(true);
+        else { inp.value = ''; appendTerminalLine('^C'); }
+      } else if (action === 'UP') {
+        if (state.cliHistory.length > 0) {
+          state.cliHistoryIndex = Math.max(0, state.cliHistoryIndex - 1);
+          inp.value = state.cliHistory[state.cliHistoryIndex] || '';
+        }
+      } else if (action === 'DOWN') {
+        if (state.cliHistory.length > 0) {
+          state.cliHistoryIndex = Math.min(state.cliHistory.length, state.cliHistoryIndex + 1);
+          inp.value = state.cliHistory[state.cliHistoryIndex] || '';
+        }
+      } else if (action === 'CMD_IFACE') executeCliCommand('/interface print');
+      else if (action === 'CMD_IP') executeCliCommand('/ip address print');
+      else if (action === 'CMD_PING') executeCliCommand('/ping 8.8.8.8');
+      focusCliInput();
+    }
+
+    function triggerCliAutocomplete(inp) {
+      const cur = inp.value.trimStart();
+      if (!cur) { inp.value = '/interface print'; return; }
+      const matches = CLI_COMMANDS.filter(c => c.startsWith(cur.toLowerCase()));
+      if (matches.length === 1) inp.value = matches[0];
+      else if (matches.length > 1) appendTerminalLine(matches.join('   '));
+    }
+
+    function executeCliCommand(rawCmd) {
+      const cmd = rawCmd.trim();
+      appendTerminalLine(`[admin@Karim-hAP] &gt; ${escapeHtml(cmd)}`);
+      if (!cmd) return;
+
+      state.cliHistory.push(cmd);
+      state.cliHistoryIndex = state.cliHistory.length;
+      const lower = cmd.toLowerCase();
+
+      if (lower === '/help' || lower === 'help' || lower === '?') {
+        appendTerminalLine([
+          'Commands:',
+          '  /interface print',
+          '  /ip address print',
+          '  /ip address add address=<ip/cidr> interface=<ether1-5>',
+          '  /ip address remove <number>',
+          '  /ip route print',
+          '  /ip route add dst-address=<ip/cidr> gateway=<ip>',
+          '  /ping <ip>',
+          '  /log print',
+          '  /system reboot',
+          '  /clear'
+        ].join('\n'));
+        return;
+      }
+
+      if (lower === '/clear' || lower === 'clear' || lower === 'cls') {
+        clearTerminalOutput();
+        return;
+      }
+
+      if (lower === '/interface print' || lower === 'interface print') {
+        let out = 'Flags: D - dynamic, X - disabled, R - running, S - slave\n #     NAME                                TYPE       ACTUAL-MTU MAC-ADDRESS\n';
+        state.interfaces.forEach((iface, idx) => {
+          const flag = iface.disabled ? 'X' : (isInterfaceRunning(iface.name) ? 'R' : ' ');
+          out += ` ${idx}  ${flag}  ${iface.name.padEnd(35, ' ')} ether      1500       ${iface.mac}\n`;
+        });
+        appendTerminalLine(out.trimEnd());
+        return;
+      }
+
+      if (lower === '/ip address print' || lower === 'ip address print') {
+        let out = 'Flags: X - disabled, I - invalid, D - dynamic\n #   ADDRESS            NETWORK         INTERFACE\n';
+        state.ipAddresses.forEach((a, idx) => {
+          const flag = isInterfaceRunning(a.interface) ? ' ' : 'I';
+          out += ` ${idx} ${flag} ${a.address.padEnd(18, ' ')} ${a.network.padEnd(15, ' ')} ${a.interface}\n`;
+        });
+        appendTerminalLine(out.trimEnd());
+        return;
+      }
+
+      if (lower.startsWith('/ip address add') || lower.startsWith('ip address add')) {
+        const am = cmd.match(/address=([^\s]+)/i);
+        const im = cmd.match(/interface=([^\s]+)/i);
+        if (!am || !im) {
+          appendTerminalLine('syntax error');
+          return;
+        }
+        const res = addIpAddressEntry(am[1], im[1].toLowerCase());
+        if (!res.ok) appendTerminalLine(res.msg);
+        return;
+      }
+
+      if (lower.startsWith('/ip address remove')) {
+        const res = removeIpAddressEntry(cmd.split(/\s+/)[3], true);
+        if (!res.ok) appendTerminalLine(res.msg);
+        return;
+      }
+
+      if (lower === '/ip route print' || lower === 'ip route print') {
+        let out = 'Flags: X - disabled, A - active, D - dynamic, C - connect, S - static\n #      DST-ADDRESS        PREF-SRC        GATEWAY            DISTANCE\n';
+        state.computedRoutes.forEach((r, idx) => {
+          out += ` ${idx}  ${r.flags.padEnd(4, ' ')}${r.dstAddress.padEnd(18, ' ')} ${(r.prefSrc || '').padEnd(15, ' ')} ${r.gatewayStatus.padEnd(22, ' ')} ${r.distance}\n`;
+        });
+        appendTerminalLine(out.trimEnd());
+        return;
+      }
+
+      if (lower.startsWith('/ip route add') || lower.startsWith('ip route add')) {
+        const dm = cmd.match(/dst-address=([^\s]+)/i);
+        const gm = cmd.match(/gateway=([^\s]+)/i);
+        if (!gm) {
+          appendTerminalLine('syntax error');
+          return;
+        }
+        const res = addStaticRouteEntry(dm ? dm[1] : '0.0.0.0/0', gm[1]);
+        if (!res.ok) appendTerminalLine(res.msg);
+        return;
+      }
+
+      if (lower.startsWith('/ping ') || lower.startsWith('ping ')) {
+        const targetIp = cmd.split(/\s+/)[1];
+        if (!targetIp) { appendTerminalLine('value of address expects range of ip addresses'); return; }
+        startPingSession(targetIp, 'router', true);
+        return;
+      }
+
+      if (lower === '/log print' || lower === 'log print') {
+        appendTerminalLine(state.logs.map(l => `${l.time} ${l.topics.padEnd(20, ' ')} ${escapeHtml(l.message)}`).join('\n'));
+        return;
+      }
+
+      if (lower === '/system reboot' || lower === 'system reboot') {
+        triggerRouterReboot();
+        return;
+      }
+
+      appendTerminalLine(`bad command name ${escapeHtml(cmd)}`);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function setupCliInputEvents() {
+      const inp = document.getElementById('cli-input');
+      if (!inp) return;
+      inp.addEventListener('focus', () => {
+        setTimeout(() => {
+          const hist = document.getElementById('terminal-history');
+          if (hist) hist.scrollTop = hist.scrollHeight;
+        }, 100);
+      });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const v = inp.value; inp.value = ''; executeCliCommand(v);
+        } else if (e.key === 'Tab') {
+          e.preventDefault(); triggerCliAutocomplete(inp);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (state.cliHistory.length > 0) {
+            state.cliHistoryIndex = Math.max(0, state.cliHistoryIndex - 1);
+            inp.value = state.cliHistory[state.cliHistoryIndex] || '';
+          }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (state.cliHistory.length > 0) {
+            state.cliHistoryIndex = Math.min(state.cliHistory.length, state.cliHistoryIndex + 1);
+            inp.value = state.cliHistory[state.cliHistoryIndex] || '';
+          }
+        } else if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+          if (state.ping.active) { e.preventDefault(); stopActivePing(true); }
+        }
+      });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+          const hist = document.getElementById('terminal-history');
+          if (hist) hist.scrollTop = hist.scrollHeight;
+        });
+      }
+    }
+
+    let highestZIndex = 20;
+    const ALL_WINDOW_KEYS = ['interfaces', 'addresses', 'routes', 'ping', 'log', 'terminal'];
+
+    function isMobileViewport() { return window.innerWidth < 768; }
+
+    function focusWinboxWindow(winKey) {
+      document.querySelectorAll('.wb-window').forEach(w => w.classList.remove('wb-active'));
+      const win = document.getElementById(`win-${winKey}`);
+      if (win) {
+        highestZIndex++;
+        win.style.zIndex = highestZIndex;
+        win.classList.add('wb-active');
+      }
+    }
+
+    function toggleWinboxWindow(winKey) {
+      if (isMobileViewport()) {
+        if (winKey === 'terminal') switchMobileTab('terminal');
+        else openMobileWinboxModal(winKey);
+        return;
+      }
+      const win = document.getElementById(`win-${winKey}`);
+      if (!win) return;
+      if (win.style.display === 'none') {
+        win.style.display = 'flex';
+        win.dataset.minimized = 'false';
+        Array.from(win.children).slice(1).forEach(el => el.style.display = '');
+        if (win.dataset.savedHeight) win.style.height = win.dataset.savedHeight;
+      }
+      focusWinboxWindow(winKey);
+    }
+
+    function minimizeWinboxWindow(winKey) {
+      if (isMobileViewport()) return;
+      const win = document.getElementById(`win-${winKey}`);
+      if (!win) return;
+      const isMin = win.dataset.minimized === 'true';
+      const bodyEls = Array.from(win.children).slice(1);
+      if (!isMin) {
+        win.dataset.savedHeight = win.style.height;
+        bodyEls.forEach(el => el.style.display = 'none');
+        win.style.height = '22px';
+        win.dataset.minimized = 'true';
+      } else {
+        bodyEls.forEach(el => el.style.display = '');
+        win.style.height = win.dataset.savedHeight || '205px';
+        win.dataset.minimized = 'false';
+      }
+    }
+
+    function closeWinboxWindow(winKey) {
+      if (isMobileViewport()) {
+        if (winKey !== 'interfaces') openMobileWinboxModal('interfaces');
+        return;
+      }
+      const win = document.getElementById(`win-${winKey}`);
+      if (win) win.style.display = 'none';
+    }
+
+    function openMobileWinboxModal(winKey) {
+      state.activeMobileWinboxModal = winKey;
+      document.querySelectorAll('.mob-win-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-mob-win') === winKey);
+      });
+      ALL_WINDOW_KEYS.forEach(k => {
+        const win = document.getElementById(`win-${k}`);
+        if (!win) return;
+        Array.from(win.children).slice(1).forEach(el => el.style.display = '');
+        win.dataset.minimized = 'false';
+        if (k === winKey) {
+          win.style.display = 'flex';
+          win.classList.add('wb-mobile-maximized', 'wb-active');
+          highestZIndex++;
+          win.style.zIndex = highestZIndex;
+        } else {
+          win.style.display = 'none';
+          win.classList.remove('wb-mobile-maximized', 'wb-active');
+        }
+      });
+    }
+
+    function switchMobileTab(tabName) {
+      state.mobileTab = tabName;
+      const p3d = document.getElementById('pane-3d');
+      const pwb = document.getElementById('pane-winbox');
+      const subnav = document.getElementById('mobile-winbox-subnav');
+
+      ['3d', 'winbox', 'terminal'].forEach(k => {
+        const b = document.getElementById(`mob-tab-${k}`);
+        if (b) b.classList.toggle('active', k === tabName);
+      });
+
+      if (tabName === '3d') {
+        p3d.style.display = 'flex';
+        pwb.style.display = 'none';
+        setTimeout(handleThreeResize, 50);
+      } else if (tabName === 'winbox') {
+        p3d.style.display = 'none';
+        pwb.style.display = 'flex';
+        if (subnav) subnav.style.display = 'flex';
+        const target = (state.activeMobileWinboxModal && state.activeMobileWinboxModal !== 'terminal')
+          ? state.activeMobileWinboxModal : 'interfaces';
+        openMobileWinboxModal(target);
+      } else if (tabName === 'terminal') {
+        p3d.style.display = 'none';
+        pwb.style.display = 'flex';
+        if (subnav) subnav.style.display = 'none';
+        openMobileWinboxModal('terminal');
+        setTimeout(focusCliInput, 80);
+      }
+    }
+
+    function arrangeWinboxWindows() {
+      if (isMobileViewport()) {
+        openMobileWinboxModal(state.mobileTab === 'terminal' ? 'terminal' : (state.activeMobileWinboxModal || 'interfaces'));
+        return;
+      }
+      const desktop = document.getElementById('winbox-desktop');
+      const W = desktop ? desktop.clientWidth : 900;
+      const H = desktop ? desktop.clientHeight : 650;
+      const colW = Math.max(250, Math.floor((W - 18) / 2));
+      const rowH = Math.max(160, Math.floor((H - 24) / 3));
+
+      const layout = [
+        { key: 'interfaces', top: 4, left: 4, w: colW, h: rowH },
+        { key: 'addresses', top: 4, left: colW + 10, w: colW, h: rowH },
+        { key: 'routes', top: rowH + 8, left: 4, w: colW, h: rowH },
+        { key: 'ping', top: rowH + 8, left: colW + 10, w: colW, h: rowH },
+        { key: 'log', top: (rowH * 2) + 12, left: 4, w: colW, h: rowH },
+        { key: 'terminal', top: (rowH * 2) + 12, left: colW + 10, w: colW, h: rowH }
+      ];
+
+      layout.forEach(item => {
+        const win = document.getElementById(`win-${item.key}`);
+        if (!win) return;
+        win.classList.remove('wb-mobile-maximized');
+        win.style.display = 'flex';
+        win.dataset.minimized = 'false';
+        Array.from(win.children).slice(1).forEach(el => el.style.display = '');
+        win.style.top = `${item.top}px`;
+        win.style.left = `${item.left}px`;
+        win.style.width = `${item.w}px`;
+        win.style.height = `${item.h}px`;
+      });
+    }
+
+    function initDraggableWindows() {
+      let draggingWin = null, activePointerId = null, startX = 0, startY = 0, initL = 0, initT = 0;
+      document.querySelectorAll('.wb-titlebar').forEach(bar => {
+        bar.addEventListener('pointerdown', (e) => {
+          if (isMobileViewport() || e.target.closest('button')) return;
+          const key = bar.getAttribute('data-drag-window');
+          focusWinboxWindow(key);
+          draggingWin = document.getElementById(`win-${key}`);
+          if (!draggingWin) return;
+          activePointerId = e.pointerId;
+          if (bar.setPointerCapture) { try { bar.setPointerCapture(e.pointerId); } catch (err) {} }
+          startX = e.clientX; startY = e.clientY;
+          initL = parseInt(draggingWin.style.left || '0', 10) || 0;
+          initT = parseInt(draggingWin.style.top || '0', 10) || 0;
+          e.preventDefault();
+        });
+
+        bar.addEventListener('pointermove', (e) => {
+          if (!draggingWin || e.pointerId !== activePointerId) return;
+          const desk = document.getElementById('winbox-desktop');
+          const dW = desk ? desk.clientWidth : window.innerWidth;
+          const dH = desk ? desk.clientHeight : window.innerHeight;
+          const wW = draggingWin.offsetWidth || 300;
+          const wH = draggingWin.offsetHeight || 160;
+          const maxLeft = Math.max(0, dW - Math.min(wW, dW - 4));
+          const maxTop = Math.max(0, dH - Math.min(wH, 28));
+          const clampedLeft = Math.max(0, Math.min(maxLeft, initL + (e.clientX - startX)));
+          const clampedTop = Math.max(0, Math.min(maxTop, initT + (e.clientY - startY)));
+          draggingWin.style.left = `${clampedLeft}px`;
+          draggingWin.style.top = `${clampedTop}px`;
+        });
+
+        const endDrag = (e) => {
+          if (!draggingWin || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+          if (bar.releasePointerCapture && activePointerId !== null) {
+            try { bar.releasePointerCapture(activePointerId); } catch (err) {}
+          }
+          draggingWin = null; activePointerId = null;
+        };
+        bar.addEventListener('pointerup', endDrag);
+        bar.addEventListener('pointercancel', endDrag);
+      });
+    }
+
+    function setWorkspaceLayout(mode) {
+      const p3d = document.getElementById('pane-3d');
+      const pwb = document.getElementById('pane-winbox');
+      const bSplit = document.getElementById('btn-layout-split');
+      const b3d = document.getElementById('btn-layout-3d');
+      const bWb = document.getElementById('btn-layout-winbox');
+      [bSplit, b3d, bWb].forEach(b => { if (b) b.classList.remove('active'); });
+
+      if (mode === '3d') {
+        p3d.style.display = 'flex';
+        p3d.className = 'relative w-full h-full bg-[#16191e] flex flex-col select-none overflow-hidden';
+        pwb.style.display = 'none';
+        if (b3d) b3d.classList.add('active');
+      } else if (mode === 'winbox') {
+        p3d.style.display = 'none';
+        pwb.style.display = 'flex';
+        pwb.className = 'w-full h-full flex flex-col bg-[#3a424d] overflow-hidden relative';
+        if (bWb) bWb.classList.add('active');
+        setTimeout(arrangeWinboxWindows, 50);
+      } else {
+        p3d.style.display = 'flex';
+        p3d.className = 'relative w-full md:w-[45%] h-full bg-[#16191e] md:border-r border-neutral-600 flex flex-col select-none overflow-hidden';
+        pwb.style.display = 'flex';
+        pwb.className = 'w-full md:w-[55%] h-full flex flex-col bg-[#3a424d] overflow-hidden relative';
+        if (bSplit) bSplit.classList.add('active');
+        setTimeout(arrangeWinboxWindows, 50);
+      }
+      setTimeout(handleThreeResize, 60);
+    }
+
+    let lastResponsiveMobile = null;
+    function syncResponsiveWorkspaceMode() {
+      const mob = isMobileViewport();
+      if (mob === lastResponsiveMobile) {
+        if (!mob) arrangeWinboxWindows();
+        handleThreeResize();
+        return;
+      }
+      lastResponsiveMobile = mob;
+      const subnav = document.getElementById('mobile-winbox-subnav');
+      if (mob) switchMobileTab(state.mobileTab || '3d');
+      else {
+        if (subnav) subnav.style.display = 'none';
+        setWorkspaceLayout('split');
+      }
+    }
+
+    let scene, camera, renderer, controls, raycaster, mouseVec;
+    const portMeshes = [];
+    const portHighlightRings = {};
+    const ledMeshes = { pwr: null, usr: null, ether: {} };
+    const portWorldPositions = {};
+    const nodeWorldPositions = {
+      'ISP': new THREE.Vector3(-4.2, 0.25, 4.3),
+      'PC-1': new THREE.Vector3(0.0, 0.25, 4.8),
+      'PC-2': new THREE.Vector3(4.2, 0.25, 4.3)
+    };
+    const activeCableObjects = {};
+    const activePacketParticles = [];
+    let sharedParticleGeo = null, sharedParticleMatSuccess = null, sharedParticleMatFail = null, sharedParticleMatReturn = null;
+
+    function createRouterTopTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024; canvas.height = 800;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#f1f5f9'; ctx.fillRect(0, 0, 1024, 800);
+      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 8; ctx.strokeRect(36, 36, 952, 728);
+
+      ctx.fillStyle = '#0284c7'; ctx.fillRect(36, 36, 952, 115);
+      ctx.fillStyle = '#ffffff'; ctx.font = 'bold 40px Tahoma, sans-serif';
+      ctx.fillText('MikroTik RouterBOARD hAP', 68, 98);
+      ctx.font = 'bold 20px Consolas, monospace';
+      ctx.fillText('RB951Ui-2nD | Special Build by Karim', 68, 132);
+
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(68, 190, 888, 250);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.strokeRect(68, 190, 888, 250);
+
+      ctx.fillStyle = '#0f172a'; ctx.font = 'bold 26px Tahoma, sans-serif';
+      ctx.fillText('MikroTik RouterBOARD RB951Ui-2nD (hAP) | Special Build by Karim', 90, 240);
+      ctx.fillStyle = '#334155'; ctx.font = '20px Consolas, monospace';
+      ctx.fillText('CPU: QCA9531 650MHz (MIPSBE)  RAM: 64MB  FLASH: 16MB', 90, 290);
+      ctx.fillText('Ports: 5x 10/100 Ethernet (Ether1 PoE-In, Ether5 PoE-Out)', 90, 330);
+      ctx.fillText('Serial: KRM-951UI-2ND  RouterOS Level 4', 90, 370);
+
+      ctx.fillStyle = '#1e293b'; ctx.font = 'bold 18px Consolas, monospace';
+      ctx.fillText('DC 10-28V', 78, 735);
+      ctx.fillText('RES', 205, 735);
+      ctx.fillText('PWR/ACT', 268, 735);
+
+      const ports = [
+        { x: 425, n: '1', s: 'PoE IN' },
+        { x: 545, n: '2', s: 'LAN' },
+        { x: 665, n: '3', s: 'LAN' },
+        { x: 785, n: '4', s: 'LAN' },
+        { x: 905, n: '5', s: 'PoE OUT' }
+      ];
+      ports.forEach(p => {
+        ctx.fillStyle = p.n === '1' ? '#0284c7' : (p.n === '5' ? '#d97706' : '#334155');
+        ctx.fillRect(p.x - 40, 650, 80, 50);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 28px Consolas, monospace';
+        ctx.fillText(p.n, p.x - 9, 684);
+        ctx.fillStyle = '#1e293b'; ctx.font = 'bold 14px Consolas, monospace';
+        ctx.fillText(p.s, p.x - 35, 735);
+      });
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.anisotropy = 4;
+      return tex;
+    }
+
+    function initThreeScene() {
+      const container = document.getElementById('three-container');
+      if (!container) return;
+      const w = container.clientWidth || 600, h = container.clientHeight || 420;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x16191e);
+
+      camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 100);
+      camera.position.set(0.2, 5.8, 7.8);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      sharedParticleGeo = new THREE.SphereGeometry(0.11, 12, 12);
+      sharedParticleMatSuccess = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+      sharedParticleMatFail = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+      sharedParticleMatReturn = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.07;
+      if (THREE.TOUCH) {
+        controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+      }
+      controls.target.set(0, 0.4, 1.3);
+      controls.maxPolarAngle = Math.PI / 2 - 0.04;
+      controls.minDistance = 2.6;
+      controls.maxDistance = 16.0;
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.78));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+      dirLight.position.set(5, 10, 7);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      const grid = new THREE.GridHelper(22, 22, 0x3b4252, 0x242933);
+      grid.position.y = -0.02;
+      scene.add(grid);
+
+      buildMikroTikRouter3D();
+      buildExternalNodes3D();
+      rebuild3DCables();
+
+      raycaster = new THREE.Raycaster();
+      mouseVec = new THREE.Vector2();
+
+      let ptrDown = null;
+      renderer.domElement.addEventListener('pointerdown', (e) => {
+        if (e.isPrimary === false) return;
+        ptrDown = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
+      }, { passive: true });
+
+      renderer.domElement.addEventListener('pointerup', (e) => {
+        if (!ptrDown || e.pointerId !== ptrDown.id) return;
+        const dist = Math.hypot(e.clientX - ptrDown.x, e.clientY - ptrDown.y);
+        const dt = performance.now() - ptrDown.t;
+        ptrDown = null;
+        if (dist > 14 || dt > 650) return;
+
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouseVec.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouseVec.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouseVec, camera);
+        const hits = raycaster.intersectObjects(portMeshes, true);
+        if (hits.length > 0) {
+          let obj = hits[0].object;
+          while (obj && !obj.userData.portIndex && obj.parent) obj = obj.parent;
+          if (obj && obj.userData.portIndex) togglePortCable(obj.userData.portIndex);
+        }
+      });
+
+      window.addEventListener('resize', () => { syncResponsiveWorkspaceMode(); handleThreeResize(); });
+      window.addEventListener('orientationchange', () => { setTimeout(() => { syncResponsiveWorkspaceMode(); handleThreeResize(); }, 180); });
+      if (window.ResizeObserver) new ResizeObserver(() => handleThreeResize()).observe(container);
+
+      animateThreeLoop();
+    }
+
+    function buildMikroTikRouter3D() {
+      const routerGroup = new THREE.Group();
+      routerGroup.position.set(0, 0.45, -1.2);
+      scene.add(routerGroup);
+
+      const rW = 4.6, rH = 0.88, rD = 3.6;
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4, metalness: 0.05 });
+      const topMat = new THREE.MeshStandardMaterial({ map: createRouterTopTexture(), roughness: 0.45 });
+      const bottomMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+
+      const chassis = new THREE.Mesh(
+        new THREE.BoxGeometry(rW, rH, rD),
+        [bodyMat, bodyMat, topMat, bottomMat, bodyMat, bodyMat]
+      );
+      chassis.castShadow = true; chassis.receiveShadow = true;
+      routerGroup.add(chassis);
+
+      const trim = new THREE.Mesh(
+        new THREE.BoxGeometry(rW + 0.04, 0.16, rD + 0.04),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 })
+      );
+      trim.position.y = -rH / 2 + 0.08;
+      routerGroup.add(trim);
+
+      const ventMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+      const ventGeo = new THREE.BoxGeometry(0.05, 0.36, 0.09);
+      for (let z = -1.2; z <= 1.2; z += 0.22) {
+        const vL = new THREE.Mesh(ventGeo, ventMat); vL.position.set(-rW / 2 - 0.01, 0.02, z);
+        const vR = new THREE.Mesh(ventGeo, ventMat); vR.position.set(rW / 2 + 0.01, 0.02, z);
+        routerGroup.add(vL, vR);
+      }
+
+      const usbCavity = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.26, 0.55), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+      usbCavity.position.set(rW / 2 + 0.01, 0.02, 0.85);
+      const usbTongue = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.07, 0.42), new THREE.MeshStandardMaterial({ color: 0x1d4ed8 }));
+      usbTongue.position.set(rW / 2 + 0.01, 0.05, 0.85);
+      routerGroup.add(usbCavity, usbTongue);
+
+      const frontZ = rD / 2;
+      const dcSocket = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.15, 18), new THREE.MeshStandardMaterial({ color: 0x111827 }));
+      dcSocket.rotation.x = Math.PI / 2; dcSocket.position.set(-1.92, -0.05, frontZ + 0.02);
+      const dcPin = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.18, 12), new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8 }));
+      dcPin.rotation.x = Math.PI / 2; dcPin.position.set(-1.92, -0.05, frontZ + 0.04);
+      const resBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.08, 14), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+      resBtn.rotation.x = Math.PI / 2; resBtn.position.set(-1.42, -0.05, frontZ + 0.01);
+      routerGroup.add(dcSocket, dcPin, resBtn);
+
+      ledMeshes.pwr = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 12, 12),
+        new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 1.3 })
+      );
+      ledMeshes.pwr.position.set(-1.12, 0.18, frontZ + 0.02);
+
+      ledMeshes.usr = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 12, 12),
+        new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 1.0 })
+      );
+      ledMeshes.usr.position.set(-0.92, 0.18, frontZ + 0.02);
+      routerGroup.add(ledMeshes.pwr, ledMeshes.usr);
+
+      const pinMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.9, roughness: 0.2 });
+      const pinGeo = new THREE.BoxGeometry(0.018, 0.08, 0.04);
+
+      for (let i = 1; i <= 5; i++) {
+        const px = -0.35 + (i - 1) * 0.56;
+        const pGroup = new THREE.Group();
+        pGroup.position.set(px, -0.04, frontZ + 0.01);
+        pGroup.userData = { portIndex: i, ifaceName: `ether${i}` };
+
+        const rimColor = i === 1 ? 0x0284c7 : (i === 5 ? 0xd97706 : 0x94a3b8);
+        pGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.36, 0.08), new THREE.MeshStandardMaterial({ color: rimColor, metalness: 0.5 })));
+
+        const cav = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.26, 0.1), new THREE.MeshBasicMaterial({ color: 0x090d14 }));
+        cav.position.z = 0.01;
+        pGroup.add(cav);
+
+        for (let p = 0; p < 8; p++) {
+          const pin = new THREE.Mesh(pinGeo, pinMat);
+          pin.position.set(-0.11 + p * 0.031, 0.07, 0.03);
+          pGroup.add(pin);
+        }
+
+        const ethLed = new THREE.Mesh(
+          new THREE.BoxGeometry(0.14, 0.055, 0.05),
+          new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 0.0 })
+        );
+        ethLed.position.set(0, 0.24, 0.02);
+        pGroup.add(ethLed);
+        ledMeshes.ether[`ether${i}`] = ethLed;
+
+        const touchHitbox = new THREE.Mesh(
+          new THREE.BoxGeometry(0.54, 0.72, 0.55),
+          new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false })
+        );
+        touchHitbox.position.set(0, 0.08, 0.16);
+        touchHitbox.userData = { portIndex: i, ifaceName: `ether${i}` };
+        pGroup.add(touchHitbox);
+
+        const ringMesh = new THREE.Mesh(
+          new THREE.RingGeometry(0.22, 0.28, 20),
+          new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.0, side: THREE.DoubleSide })
+        );
+        ringMesh.position.set(0, 0, 0.07);
+        pGroup.add(ringMesh);
+        portHighlightRings[i] = ringMesh;
+
+        routerGroup.add(pGroup);
+        portMeshes.push(touchHitbox, pGroup);
+        portWorldPositions[`ether${i}`] = new THREE.Vector3(px, 0.41, -1.2 + frontZ + 0.06);
+      }
+    }
+
+    function pulsePortHighlight3D(portIndex) {
+      const ring = portHighlightRings[portIndex];
+      if (!ring) return;
+      ring.material.opacity = 0.9;
+      setTimeout(() => { if (ring && ring.material) ring.material.opacity = 0.0; }, 280);
+    }
+
+    function buildExternalNodes3D() {
+      const ispGroup = new THREE.Group();
+      ispGroup.position.copy(nodeWorldPositions['ISP']);
+      const cloudMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4 });
+      const c1 = new THREE.Mesh(new THREE.SphereGeometry(0.52, 16, 16), cloudMat);
+      const c2 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), cloudMat); c2.position.set(-0.42, -0.06, 0.08);
+      const c3 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), cloudMat); c3.position.set(0.42, -0.06, 0.08);
+      ispGroup.add(c1, c2, c3);
+      scene.add(ispGroup);
+
+      ['PC-1', 'PC-2'].forEach(k => {
+        const pcGroup = new THREE.Group();
+        pcGroup.position.copy(nodeWorldPositions[k]);
+        const mon = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.08), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+        mon.position.y = 0.44;
+        const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.98, 0.56), new THREE.MeshBasicMaterial({ color: EXTERNAL_NODES[k].colorHex }));
+        scr.position.set(0, 0.44, -0.045); scr.rotation.y = Math.PI;
+        const base = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.6), new THREE.MeshStandardMaterial({ color: 0x475569 }));
+        pcGroup.add(mon, scr, base);
+        scene.add(pcGroup);
+      });
+    }
+
+    function rebuild3DCables() {
+      if (!scene) return;
+      Object.values(activeCableObjects).forEach(obj => {
+        if (obj.mesh) {
+          scene.remove(obj.mesh);
+          if (obj.mesh.geometry) obj.mesh.geometry.dispose();
+          if (obj.mesh.material) obj.mesh.material.dispose();
+        }
+        if (obj.plugMesh) {
+          scene.remove(obj.plugMesh);
+          const idx = portMeshes.indexOf(obj.plugMesh);
+          if (idx !== -1) portMeshes.splice(idx, 1);
+          if (obj.plugMesh.geometry) obj.plugMesh.geometry.dispose();
+          if (obj.plugMesh.material) obj.plugMesh.material.dispose();
+        }
+      });
+      for (const k in activeCableObjects) delete activeCableObjects[k];
+
+      state.interfaces.forEach(iface => {
+        if (!iface.connectedNode) return;
+        const startPos = portWorldPositions[iface.name];
+        const endPos = nodeWorldPositions[iface.connectedNode];
+        if (!startPos || !endPos) return;
+
+        const nodeCfg = EXTERNAL_NODES[iface.connectedNode];
+        const curve = new THREE.CatmullRomCurve3([
+          startPos.clone(),
+          new THREE.Vector3(startPos.x * 0.85 + endPos.x * 0.15, 0.12, startPos.z + 1.15),
+          new THREE.Vector3(startPos.x * 0.35 + endPos.x * 0.65, 0.05, (startPos.z + endPos.z) * 0.55),
+          endPos.clone()
+        ]);
+
+        const cableMesh = new THREE.Mesh(
+          new THREE.TubeGeometry(curve, 28, 0.044, 8, false),
+          new THREE.MeshStandardMaterial({ color: nodeCfg.colorHex, roughness: 0.4 })
+        );
+        cableMesh.castShadow = true;
+        scene.add(cableMesh);
+
+        const plugMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.28, 0.24, 0.32),
+          new THREE.MeshStandardMaterial({ color: nodeCfg.colorHex, roughness: 0.35 })
+        );
+        plugMesh.position.copy(startPos).add(new THREE.Vector3(0, 0, 0.1));
+        plugMesh.userData = { portIndex: iface.id };
+        scene.add(plugMesh);
+        portMeshes.push(plugMesh);
+
+        activeCableObjects[iface.name] = { curve, mesh: cableMesh, plugMesh };
+      });
+    }
+
+    function spawnCablePacketParticle(ifaceName, ok = true, delayMs = 0) {
+      setTimeout(() => {
+        const cableObj = activeCableObjects[ifaceName];
+        if (!cableObj || !scene || !sharedParticleGeo) return;
+        if (activePacketParticles.length > 24) {
+          const old = activePacketParticles.shift();
+          if (old && old.mesh) scene.remove(old.mesh);
+        }
+        const sphere = new THREE.Mesh(sharedParticleGeo, ok ? sharedParticleMatSuccess : sharedParticleMatFail);
+        scene.add(sphere);
+        activePacketParticles.push({ mesh: sphere, curve: cableObj.curve, progress: 0, speed: 0.035, roundTrip: ok, returning: false });
+      }, delayMs);
+    }
+
+    function setCameraPreset(preset) {
+      if (!camera || !controls) return;
+      if (preset === 'front') { camera.position.set(0, 1.4, 3.6); controls.target.set(0, 0.35, -0.5); }
+      else if (preset === 'top') { camera.position.set(0, 6.5, -0.5); controls.target.set(0, 0.4, -1.2); }
+      else { camera.position.set(0.2, 5.8, 7.8); controls.target.set(0, 0.4, 1.3); }
+      controls.update();
+    }
+
+    function handleThreeResize() {
+      const container = document.getElementById('three-container');
+      if (!container || !renderer || !camera) return;
+      const w = container.clientWidth, h = container.clientHeight;
+      if (w <= 10 || h <= 10) return;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h);
+    }
+
+    function updateFloatingLabels3D() {
+      const container = document.getElementById('three-container');
+      if (!container || !camera) return;
+      const w = container.clientWidth, h = container.clientHeight;
+      if (w <= 0 || h <= 0) return;
+
+      const list = [
+        { id: 'label-router', pos: new THREE.Vector3(0, 1.25, -1.2) },
+        { id: 'label-isp', pos: nodeWorldPositions['ISP'].clone().add(new THREE.Vector3(0, 0.85, 0)) },
+        { id: 'label-pc1', pos: nodeWorldPositions['PC-1'].clone().add(new THREE.Vector3(0, 1.05, 0)) },
+        { id: 'label-pc2', pos: nodeWorldPositions['PC-2'].clone().add(new THREE.Vector3(0, 1.05, 0)) }
+      ];
+      list.forEach(item => {
+        const el = document.getElementById(item.id);
+        if (!el) return;
+        const proj = item.pos.clone().project(camera);
+        if (proj.z > 1) { el.style.opacity = '0'; return; }
+        const x = (proj.x * 0.5 + 0.5) * w, y = (-(proj.y * 0.5) + 0.5) * h;
+        el.style.left = `${x}px`; el.style.top = `${y}px`;
+        el.style.opacity = (x < 10 || x > w - 10 || y < 10 || y > h - 10) ? '0' : '1';
+      });
+    }
+
+    function updateLedDomIndicators() {
+      const now = performance.now();
+      if (ledMeshes.pwr) ledMeshes.pwr.material.emissiveIntensity = state.booting ? 0.2 : 1.3;
+      if (ledMeshes.usr) {
+        ledMeshes.usr.material.emissiveIntensity = state.booting
+          ? (Math.sin(now * 0.025) > 0 ? 1.6 : 0.1) : (0.5 + 0.4 * Math.sin(now * 0.008));
+      }
+
+      state.interfaces.forEach(iface => {
+        const running = isInterfaceRunning(iface.name);
+        const led3d = ledMeshes.ether[iface.name];
+        const hudEl = document.getElementById(`hud-led-eth${iface.id}`);
+        const activeTx = running && ((now - iface.lastBlink) < 350 || state.ping.active);
+
+        if (led3d) {
+          if (!running) {
+            led3d.material.color.setHex(0x1e293b);
+            led3d.material.emissiveIntensity = 0;
+          } else if (activeTx) {
+            const on = Math.sin(now * 0.04 + iface.id) > 0;
+            led3d.material.color.setHex(0x22c55e);
+            led3d.material.emissive.setHex(0x22c55e);
+            led3d.material.emissiveIntensity = on ? 2.0 : 0.2;
+          } else {
+            led3d.material.color.setHex(0x22c55e);
+            led3d.material.emissive.setHex(0x22c55e);
+            led3d.material.emissiveIntensity = 1.1;
+          }
+        }
+        if (hudEl) {
+          hudEl.className = running
+            ? 'w-2 h-2 mx-auto bg-green-600 border border-black'
+            : 'w-2 h-2 mx-auto bg-neutral-600 border border-black';
+        }
+      });
+    }
+
+    function animateThreeLoop() {
+      requestAnimationFrame(animateThreeLoop);
+      for (let i = activePacketParticles.length - 1; i >= 0; i--) {
+        const p = activePacketParticles[i];
+        p.progress += p.speed;
+        if (p.progress >= 1.0) {
+          if (p.roundTrip && !p.returning) {
+            p.returning = true; p.progress = 0; p.mesh.material = sharedParticleMatReturn;
+          } else {
+            scene.remove(p.mesh);
+            activePacketParticles.splice(i, 1);
+            continue;
+          }
+        }
+        const t = p.returning ? (1.0 - p.progress) : p.progress;
+        if (p.curve) p.mesh.position.copy(p.curve.getPointAt(Math.max(0, Math.min(1, t))));
+      }
+      updateLedDomIndicators();
+      if (controls) controls.update();
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+        updateFloatingLabels3D();
+      }
+    }
+
+    function startTelemetryTicker() {
+      setInterval(() => {
+        if (!state.booting) state.uptimeSeconds++;
+        const hrs = String(Math.floor(state.uptimeSeconds / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((state.uptimeSeconds % 3600) / 60)).padStart(2, '0');
+        const secs = String(state.uptimeSeconds % 60).padStart(2, '0');
+        const upEl = document.getElementById('telemetry-uptime');
+        if (upEl) upEl.textContent = `${hrs}:${mins}:${secs}`;
+        const cpuEl = document.getElementById('telemetry-cpu');
+        if (cpuEl) cpuEl.textContent = `${(state.booting ? 85 : (state.ping.active ? 12 : 2)) + (state.uptimeSeconds % 3)}%`;
+      }, 1000);
+    }
+
+    window.onload = function() {
+      if (window.lucide) window.lucide.createIcons();
+      initTerminalBanner();
+      setupCliInputEvents();
+      initDraggableWindows();
+      initDefaultLabState(true);
+      initThreeScene();
+      startTelemetryTicker();
+      syncResponsiveWorkspaceMode();
+    };
+  </script>
+</body>
+</html>
